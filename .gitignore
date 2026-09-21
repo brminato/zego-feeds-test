@@ -1,0 +1,55 @@
+# Operating-system files
+.DS_Store
+Thumbs.db
+
+# IDEs and editors
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+*.swp
+*.swo
+
+# Java / Maven / Quarkus build output
+**/target/
+**/.quarkus/
+*.class
+*.jar
+*.war
+*.ear
+*.jfr
+*.hprof
+
+
+# Logs and runtime files
+*.log
+*.pid
+*.seed
+hs_err_pid*
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+*.p12
+*.pfx
+.certs/
+
+# Test and coverage reports
+coverage/
+test-results/
+*.exec
+
+# Temporary files
+*.tmp
+*.temp
+*.orig
+*.rej
+*~
+
+# Node.js dependencies
+node_modules/

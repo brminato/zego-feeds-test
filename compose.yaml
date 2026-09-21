@@ -1,0 +1,83 @@
+name: signal-feed
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: feed
+      POSTGRES_USER: feed
+      POSTGRES_PASSWORD: feed-dev
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: ["postgres-data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U feed -d feed"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["127.0.0.1:6379:6379"]
+    volumes: ["redis-data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: feed-redis-insight
+    ports:
+      - "5540:5540"
+    depends_on:
+      - redis
+    volumes:
+      - redis-insight-data:/data
+  rabbitmq:
+    image: rabbitmq:4.1-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: feed
+      RABBITMQ_DEFAULT_PASS: feed-dev
+    ports: ["127.0.0.1:5672:5672", "127.0.0.1:15672:15672"]
+    volumes: ["rabbit-data:/var/lib/rabbitmq"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  api:
+    profiles: ["app"]
+    build: ./backend
+    environment: &backend-env
+      DB_URL: jdbc:postgresql://postgres:5432/feed
+      REDIS_HOST: redis
+      RABBIT_HOST: rabbitmq
+      WORKER_ENABLED: "false"
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on: &deps
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+  worker:
+    profiles: ["app"]
+    build: ./backend
+    environment:
+      <<: *backend-env
+      WORKER_ENABLED: "true"
+    depends_on: *deps
+  frontend:
+    profiles: ["app"]
+    build: ./frontend
+    ports: ["127.0.0.1:3000:80"]
+    depends_on: [api]
+  seed:
+    profiles: ["seed"]
+    build: ./scripts
+    environment:
+      DATABASE_URL: postgresql://feed:feed-dev@postgres:5432/feed
+      REDIS_URL: redis://redis:6379/0
+    depends_on: *deps
+volumes:
+  postgres-data:
+  redis-data:
+  rabbit-data:
+  redis-insight-data:

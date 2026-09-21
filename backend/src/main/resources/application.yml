@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: feed-system
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/feed}
+    username: ${DB_USER:feed}
+    password: ${DB_PASSWORD:feed-dev}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      timeout: 2s
+  rabbitmq:
+    host: ${RABBIT_HOST:localhost}
+    username: ${RABBIT_USER:feed}
+    password: ${RABBIT_PASSWORD:feed-dev}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        concurrency: 2
+        max-concurrency: 8
+        prefetch: 10
+        retry:
+          enabled: true
+          max-attempts: 5
+          initial-interval: 1s
+          multiplier: 2
+          max-interval: 10s
+        default-requeue-rejected: false
+  threads:
+    virtual:
+      enabled: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+app:
+  worker-enabled: ${WORKER_ENABLED:true}
